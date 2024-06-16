@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Makku.MetroUI.Tables
 {
@@ -19,10 +20,12 @@ namespace Makku.MetroUI.Tables
 
         private MetroTable Table { get; }
 
-        public MetroMappedColumnBuilder<TModel> WithColumn(string name)
-        {
-            return new MetroMappedColumnBuilder<TModel>(this, name);
-        }
+        public MetroMappedColumnBuilder<TModel> WithColumn(string name) => new MetroMappedColumnBuilder<TModel>(this, name);
+        public MetroMappedColumnBuilder<TModel> WithColumn(string name, string title) => new MetroMappedColumnBuilder<TModel>(this, name, title);
+        public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name) => WithSortableColumn(name, name);
+        public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name, string title) => new MetroMappedColumnBuilder<TModel>(this, name, title, sortable: true);
+        public MetroMappedColumnBuilder<TModel> WithHiddenColumn(string name) => new MetroMappedColumnBuilder<TModel>(this, name).Hidden();
+        public MetroMappedColumnBuilder<TModel> WithHiddenColumn(string name, string title) => new MetroMappedColumnBuilder<TModel>(this, name, title).Hidden();
 
         public MetroMappedTableBuilder<TModel> WithColumn(DataColumn<TModel> column)
         {
@@ -58,10 +61,12 @@ namespace Makku.MetroUI.Tables
         {
             var instance = new MetroMappedDataTableBuilder<TModel>(table);
 
-            var mappings = instance.Table.Columns.Select(c => (c is DataColumn<TModel> dt) ? dt.Mapping : e => "").ToArray() ?? Enumerable.Empty<Func<TModel, string>>();
-            IEnumerable<string> processFunc(TModel entity) => mappings.Select(m => m.Invoke(entity));
+            var mappings = instance.Table.Columns.OfType<DataColumn<TModel>>().Select(c => c.Mapping).ToArray() ?? Enumerable.Empty<Expression<Func<TModel, object>>>();
+            IEnumerable<object> processFunc(TModel entity) => mappings.Select(m => m.Compile().Invoke(entity));
 
-            instance.Table.Rows = (ConcurrentBag<List<string>>)values.Select(processFunc);
+            var postProcesses = instance.Table.Columns.OfType<DataColumn<TModel>>().Select(c => c.PostProcess);
+
+            instance.Table.Rows = values.Select(processFunc).Select(row => row.Zip(postProcesses, (value, process) => process.Compile().Invoke(value)));
             return instance;
         }
 

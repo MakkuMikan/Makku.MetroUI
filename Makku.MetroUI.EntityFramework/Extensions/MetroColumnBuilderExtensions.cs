@@ -1,5 +1,7 @@
 ﻿using Makku.MetroUI.Tables;
-using Microsoft.EntityFrameworkCore;
+using System.Data.Entity;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Makku.MetroUI.Extensions
 {

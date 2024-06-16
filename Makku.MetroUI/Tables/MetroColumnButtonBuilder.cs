@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Makku.MetroUI.Tables
 {
@@ -20,22 +21,24 @@ namespace Makku.MetroUI.Tables
             return instance;
         }
 
-        public MetroMappedColumnButtonBuilder<TModel> WithAction(Func<TModel, string> action)
+        public MetroMappedColumnButtonBuilder<TModel> WithAction(Expression<Func<TModel, string>> action)
         {
             Button.Action = action;
             return this;
         }
 
-        public MetroMappedColumnButtonBuilder<TModel> WithHref(Func<TModel, string> href)
+        public MetroMappedColumnButtonBuilder<TModel> WithHref(Expression<Func<TModel, string>> href)
         {
-            Button.Action = model => $"window.location.href = '{href(model) ?? "#"}'";
+            Button.Action = model => $"window.location.href = '{href.Compile()(model) ?? "#"}'";
             return this;
         }
 
         public MetroMappedColumnBuilder<TModel> Save() => ColumnBuilder.WithButton(Button);
 
         public MetroMappedColumnBuilder<TModel> WithColumn(string name) => Save().WithColumn(name);
+        public MetroMappedColumnBuilder<TModel> WithColumn(string name, string title) => Save().WithColumn(name, title);
         public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name) => Save().WithSortableColumn(name);
+        public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name, string title) => Save().WithSortableColumn(name, title);
 
         public MetroMappedDataTableBuilder<TModel> WithData(IEnumerable<TModel> data) => Save().WithData(data);
         public MetroCustomTableBuilder WithCustom() => Save().WithCustom();

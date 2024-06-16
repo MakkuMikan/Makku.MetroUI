@@ -4,6 +4,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>A library to streamline the use of MetroUI's components (for .NET)</Description>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Makku.MetroUI.Core\Makku.MetroUI.csproj" />
+    <ProjectReference Include="..\Makku.MetroUI\Makku.MetroUI.csproj" />
   </ItemGroup>
 
 </Project>

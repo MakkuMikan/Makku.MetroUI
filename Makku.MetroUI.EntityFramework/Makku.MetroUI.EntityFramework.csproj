@@ -60,16 +60,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Makku.MetroUI.EntityFramework.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Makku.MetroUI.Core\Makku.MetroUI.csproj">
-      <Project>{4679d8e6-47f6-4276-9737-68a3df67bc85}</Project>
-      <Name>Makku.MetroUI</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Makku.MetroUI.Framework\Makku.MetroUI.Framework.csproj">
       <Project>{fe0b99ef-a3b8-41f2-81c6-3b23ec98911a}</Project>
       <Name>Makku.MetroUI.Framework</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Makku.MetroUI\Makku.MetroUI.csproj">
+      <Project>{4679d8e6-47f6-4276-9737-68a3df67bc85}</Project>
+      <Name>Makku.MetroUI</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

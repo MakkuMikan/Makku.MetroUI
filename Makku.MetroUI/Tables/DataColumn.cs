@@ -1,13 +1,17 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Makku.MetroUI.Tables
 {
     public class DataColumn<T> : Column
     {
         [JsonIgnore]
-        public Func<T, string> Mapping { get; set; } = i => i?.ToString() ?? "";
+        public new Expression<Func<T, object>> Mapping { get; set; } = default;
+
+        [JsonIgnore]
+        public new Expression<Func<object, string>> PostProcess { get; set; } = v => v == null ? "" : v.ToString();
 
         [JsonIgnore]
         public List<ColumnButton<T>> Buttons { get; set; } = new List<ColumnButton<T>>();

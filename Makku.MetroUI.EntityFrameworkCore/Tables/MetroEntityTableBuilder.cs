@@ -5,15 +5,15 @@ namespace Makku.MetroUI.Tables
 {
     public class MetroEntityTableBuilder<TEntity>
     {
-        private IMetroTable Table { get; }
+        private MetroTable Table { get; }
         private IQueryable<IEnumerable<string>> Query { get; set; }
 
-        public MetroEntityTableBuilder(IMetroTable table)
+        public MetroEntityTableBuilder(MetroTable table)
         {
             Table = table;
         }
 
-        public static MetroEntityTableBuilder<TEntity> WithQuery(IMetroTable table, IQueryable<IEnumerable<string>> query)
+        public static MetroEntityTableBuilder<TEntity> WithQuery(MetroTable table, IQueryable<IEnumerable<string>> query)
         {
             var instance = new MetroEntityTableBuilder<TEntity>(table);
             instance.Query = query;
@@ -31,7 +31,7 @@ namespace Makku.MetroUI.Tables
             return MetroFilledTableBuilder.FromTable(Table);
         }
 
-        public async Task<IMetroTable> QueryAndCompileAsync()
+        public async Task<MetroTable> QueryAndCompileAsync()
             => (await QueryAsync()).Compile();
     }
 }

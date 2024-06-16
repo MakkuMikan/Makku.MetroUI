@@ -1,26 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Makku.MetroUI.Helpers;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace Makku.MetroUI.Tables
 {
     public class MetroMappedEntityTableBuilder<TEntity> where TEntity : class
     {
-        private IMetroTable Table { get; }
+        private MetroTable Table { get; }
         private IQueryable<TEntity> Query { get; set; }
 
-        public MetroMappedEntityTableBuilder(IMetroTable table)
+        public MetroMappedEntityTableBuilder(MetroTable table)
         {
             Table = table;
         }
 
-        public static MetroMappedEntityTableBuilder<TEntity> WithContext(IMetroTable table, DbContext context)
+        public static MetroMappedEntityTableBuilder<TEntity> WithContext(MetroTable table, DbContext context)
         {
             var instance = new MetroMappedEntityTableBuilder<TEntity>(table);
             instance.Query = context.Set<TEntity>().AsQueryable();
             return instance;
         }
 
-        public static MetroMappedEntityTableBuilder<TEntity> WithQuery(IMetroTable table, IQueryable<TEntity> query)
+        public static MetroMappedEntityTableBuilder<TEntity> WithQuery(MetroTable table, IQueryable<TEntity> query)
         {
             var instance = new MetroMappedEntityTableBuilder<TEntity>(table);
             instance.Query = query;
@@ -35,18 +36,39 @@ namespace Makku.MetroUI.Tables
 
         public async Task<MetroFilledTableBuilder> QueryAsync()
         {
-            IEnumerable<IEnumerable<string>> data;
+            IEnumerable<IEnumerable<object>> data;
 
-            var mappings = Table.Columns.Select(c => (c is DataColumn<TEntity> dt) ? dt.Mapping : e => "").ToArray() ?? [];
-            IEnumerable<string> processFunc(TEntity entity) => mappings!.Select(m => m.Invoke(entity));
-            data = (await Query.ToListAsync()).Select(r => mappings.Select(m => m.Invoke(r)).ToList()).ToList();
+            var mappings = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.Mapping).ToArray() ?? Array.Empty<Expression<Func<TEntity, object>>>();
 
-            Table.Rows = data;
+            var convert = CombineExpressions(mappings);
+
+            data = await Query.Select(convert).ToListAsync();
+
+            var postProcesses = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.PostProcess);
+
+            Table.Rows = data.Select(row => row.Zip(postProcesses, (value, process) => process.Compile().Invoke(value)));
 
             return MetroFilledTableBuilder.FromTable(Table);
         }
 
-        public async Task<IMetroTable> QueryAndCompileAsync()
+        public static Expression<Func<TEntity, object[]>> CombineExpressions(params Expression<Func<TEntity, object>>[] expressions)
+        {
+            var parameter = Expression.Parameter(typeof(TEntity), "x");
+
+            var arrayInit = Expression.NewArrayInit(
+                typeof(object),
+                expressions.Select(e => ReplaceParameter(e.Body, e.Parameters[0], parameter))
+            );
+
+            return Expression.Lambda<Func<TEntity, object[]>>(arrayInit, parameter);
+        }
+
+        public static Expression ReplaceParameter(Expression expression, ParameterExpression source, Expression target)
+        {
+            return new ParameterReplacer(source, target).Visit(expression);
+        }
+
+        public async Task<MetroTable> QueryAndCompileAsync()
             => (await QueryAsync()).Compile();
     }
 }

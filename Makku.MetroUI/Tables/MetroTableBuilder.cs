@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Makku.MetroUI.Tables
@@ -15,10 +16,12 @@ namespace Makku.MetroUI.Tables
         public static MetroMappedTableBuilder<TModel> NewTable<TModel>()
             => new MetroMappedTableBuilder<TModel>();
 
-        public MetroColumnBuilder WithColumn(string name)
-        {
-            return new MetroColumnBuilder(this, name);
-        }
+        public MetroColumnBuilder WithColumn(string name) => new MetroColumnBuilder(this, name);
+        public MetroColumnBuilder WithColumn(string name, string title) => new MetroColumnBuilder(this, name, title);
+        public MetroColumnBuilder WithSortableColumn(string name) => WithSortableColumn(name, name);
+        public MetroColumnBuilder WithSortableColumn(string name, string title) => new MetroColumnBuilder(this, name, title, sortable: true);
+        public MetroColumnBuilder WithHiddenColumn(string name) => new MetroColumnBuilder(this, name).Hidden();
+        public MetroColumnBuilder WithHiddenColumn(string name, string title) => new MetroColumnBuilder(this, name, title).Hidden();
 
         public MetroTableBuilder WithColumn(Column column)
         {
@@ -46,6 +49,11 @@ namespace Makku.MetroUI.Tables
         public static MetroMappedTableBuilder<TModel> NewTable() => new MetroMappedTableBuilder<TModel>();
 
         public static MetroMappedColumnBuilder<TModel> WithColumn(string name) => NewTable().WithColumn(name);
+        public static MetroMappedColumnBuilder<TModel> WithColumn(string name, string title) => NewTable().WithColumn(name, title);
+        public static MetroMappedColumnBuilder<TModel> WithSortableColumn(string name) => NewTable().WithSortableColumn(name);
+        public static MetroMappedColumnBuilder<TModel> WithSortableColumn(string name, string title) => NewTable().WithSortableColumn(name, title);
+        public static MetroMappedColumnBuilder<TModel> WithHiddenColumn(string name) => NewTable().WithHiddenColumn(name);
+        public static MetroMappedColumnBuilder<TModel> WithHiddenColumn(string name, string title) => NewTable().WithHiddenColumn(name, title);
 
         public static MetroMappedTableBuilder<TModel> WithColumn(DataColumn<TModel> column) => NewTable().WithColumn(column);
 

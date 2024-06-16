@@ -71,6 +71,7 @@
     <Compile Include="Services\MetroHelper.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Makku.MetroUI.Framework.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

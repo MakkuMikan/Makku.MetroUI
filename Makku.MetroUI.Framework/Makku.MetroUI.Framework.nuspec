@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>1.0.1</version>
+    <title>$title$</title>
+    <authors>Makku</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <!-- <icon>icon.png</icon> -->
+    <projectUrl>https://github.com/MakkuMikan/Makku.MetroUI</projectUrl>
+    <description>A library to streamline the use of MetroUI's components (for .NET Framework)</description>
+    <releaseNotes>Release</releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>MetroUI</tags>
+  </metadata>
+</package>

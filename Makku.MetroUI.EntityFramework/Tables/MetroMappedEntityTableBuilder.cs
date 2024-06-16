@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Makku.MetroUI.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -39,15 +40,46 @@ namespace Makku.MetroUI.Tables
 
         public async Task<MetroFilledTableBuilder> QueryAsync()
         {
-            IEnumerable<IEnumerable<string>> data;
+            IEnumerable<IEnumerable<object>> data;
 
-            var mappings = Table.Columns.Select(c => (c is DataColumn<TEntity> dt) ? dt.Mapping : e => "").ToArray() ?? [];
-            IEnumerable<string> processFunc(TEntity entity) => mappings.Select(m => m.Invoke(entity));
-            data = (await Query.ToListAsync()).Select(r => mappings.Select(m => m.Invoke(r)).ToList()).ToList();
+            var mappings = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.Mapping).ToArray() ?? Array.Empty<Expression<Func<TEntity, object>>>();
 
-            Table.Rows = data;
+            var convert = CombineExpressions(mappings);
+
+            data = await Query.Select(convert).ToListAsync();
+
+            if (!data.Any())
+            {
+                return MetroFilledTableBuilder.FromTable(Table);
+            }
+
+            var postProcessing = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.PostProcess);
+
+            if (postProcessing.Count() != data.First().Count())
+            {
+                throw new Exception("");
+            }
+
+            Table.Rows = data.Select(row => row.Zip(postProcessing, (value, process) => process.Compile().Invoke(value)));
 
             return MetroFilledTableBuilder.FromTable(Table);
+        }
+
+        public static Expression<Func<TEntity, object[]>> CombineExpressions(params Expression[] expressions)
+        {
+            var parameter = Expression.Parameter(typeof(TEntity), "x");
+
+            var arrayInit = Expression.NewArrayInit(
+                typeof(object),
+                expressions.Cast<Expression<Func<TEntity, dynamic>>>().Select(e => ReplaceParameter(e.Body, e.Parameters[0], parameter))
+            );
+
+            return Expression.Lambda<Func<TEntity, object[]>>(arrayInit, parameter);
+        }
+
+        public static Expression ReplaceParameter(Expression expression, ParameterExpression source, Expression target)
+        {
+            return new ParameterReplacer(source, target).Visit(expression);
         }
 
         public async Task<MetroTable> QueryAndCompileAsync()
