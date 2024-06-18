@@ -97,13 +97,15 @@ namespace Makku.MetroUI.Tables
         public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name) => Save().WithSortableColumn(name);
         public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name, string title) => Save().WithSortableColumn(name, title);
 
-        public MetroMappedColumnBuilder<TModel> WithMapping(Expression<Func<TModel, object>> expression)
+        public MetroMappedColumnBuilder<TModel> WithMapping<TValue>(Expression<Func<TModel, TValue>> expression) where TValue : class
         {
-            Column.Mapping = expression;
+            var mappingParameter = Expression.Parameter(typeof(TModel), "x");
+            var mappingBody = Expression.Convert(Expression.Invoke(expression, mappingParameter), typeof(object));
+            Column.Mapping = Expression.Lambda<Func<TModel, object>>(mappingBody, mappingParameter);
             return this;
         }
 
-        public MetroMappedColumnBuilder<TModel> WithProperty<TValue>(Expression<Func<TModel, TValue>> expression, Expression<Func<TValue, string>> postProcess)
+        public MetroMappedColumnBuilder<TModel> WithMapping<TValue>(Expression<Func<TModel, TValue>> expression, Expression<Func<TValue, string>> postProcess)
         {
             var mappingParameter = Expression.Parameter(typeof(TModel), "x");
             var mappingBody = Expression.Convert(Expression.Invoke(expression, mappingParameter), typeof(object));
@@ -149,23 +151,23 @@ namespace Makku.MetroUI.Tables
         public static MetroMappedColumnBuilder<TModel> WithMapping(MetroMappedTableBuilder<TModel> tableBuilder, DataColumn<TModel> column, Expression<Func<TModel, object>> expression)
             => new MetroMappedColumnBuilder<TModel>(tableBuilder, column).WithMapping(expression);
 
-        public static MetroMappedColumnBuilder<TModel> WithMapping(MetroTable table, DataColumn<TModel> column, Expression<Func<TModel, object>> expression)
+        public static MetroMappedColumnBuilder<TModel> WithMapping<TValue>(MetroTable table, DataColumn<TModel> column, Expression<Func<TModel, TValue>> expression) where TValue : class
         {
             var tableBuilder = new MetroMappedTableBuilder<TModel>(table);
             var instance = new MetroMappedColumnBuilder<TModel>(tableBuilder, column);
             return instance.WithMapping(expression);
         }
 
-        public static MetroMappedColumnBuilder<TModel> WithMapping(MetroTable table, Column column, Expression<Func<TModel, object>> expression)
+        public static MetroMappedColumnBuilder<TModel> WithMapping<TValue>(MetroTable table, Column column, Expression<Func<TModel, TValue>> expression) where TValue : class
         {
             var instance = new MetroMappedColumnBuilder<TModel>(new MetroMappedTableBuilder<TModel>(table), new DataColumn<TModel>(column));
             return instance.WithMapping(expression);
         }
 
-        public static MetroMappedColumnBuilder<TModel> WithProperty<TValue>(MetroMappedTableBuilder<TModel> tableBuilder, DataColumn<TModel> column, Expression<Func<TModel, TValue>> expression, Expression<Func<TValue, string>> postProcess)
+        public static MetroMappedColumnBuilder<TModel> Mapping<TValue>(MetroMappedTableBuilder<TModel> tableBuilder, DataColumn<TModel> column, Expression<Func<TModel, TValue>> expression, Expression<Func<TValue, string>> postProcess)
         {
             var instance = new MetroMappedColumnBuilder<TModel>(tableBuilder, column);
-            return instance.WithProperty(expression, postProcess);
+            return instance.WithMapping(expression, postProcess);
         }
     }
 }

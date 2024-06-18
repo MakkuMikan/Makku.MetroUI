@@ -61,25 +61,7 @@ namespace Makku.MetroUI.Tables
         public MetroColumnBuilder WithHiddenColumn(string name, string title) => Save().WithHiddenColumn(name, title);
 
         public MetroMappedColumnBuilder<T> WithMapping<T>(Expression<Func<T, object>> expression)
-        {
-            //// Create a new parameter expression
-            //ParameterExpression parameter = Expression.Parameter(typeof(T), "param");
-
-            //// Replace the parameter in the original expression with the new parameter
-            //Expression body = new ParameterReplacer(expression.Parameters[0], parameter).Visit(expression.Body);
-
-            //// Add the null check and call to ToString() to the body
-            //body = Expression.Condition(
-            //    Expression.Equal(body, Expression.Constant(null)),
-            //    Expression.Constant(null, typeof(string)),
-            //    Expression.Call(body, typeof(object).GetMethod("ToString"))
-            //);
-
-            //// Create and return the new expression
-            //return MetroMappedColumnBuilder<T>.WithMapping(TableBuilder.Table, Column, Expression.Lambda<Func<T, string>>(body, parameter));
-
-            return MetroMappedColumnBuilder<T>.WithMapping(TableBuilder.Table, Column, expression);
-        }
+            => MetroMappedColumnBuilder<T>.WithMapping(TableBuilder.Table, Column, expression);
 
         public MetroDataTableBuilder WithData(IEnumerable<IEnumerable<string>> data) => Save().WithData(data);
         public MetroCustomTableBuilder WithCustom() => Save().WithCustom();
