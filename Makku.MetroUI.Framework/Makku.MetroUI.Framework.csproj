@@ -75,7 +75,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Makku.MetroUI.Core\Makku.MetroUI.csproj">
+    <ProjectReference Include="..\Makku.MetroUI\Makku.MetroUI.csproj">
       <Project>{4679d8e6-47f6-4276-9737-68a3df67bc85}</Project>
       <Name>Makku.MetroUI</Name>
     </ProjectReference>

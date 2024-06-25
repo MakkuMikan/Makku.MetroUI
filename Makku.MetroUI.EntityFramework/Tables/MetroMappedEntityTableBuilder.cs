@@ -48,19 +48,9 @@ namespace Makku.MetroUI.Tables
 
             data = await Query.Select(convert).ToListAsync();
 
-            if (!data.Any())
-            {
-                return MetroFilledTableBuilder.FromTable(Table);
-            }
+            var postProcesses = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.PostProcess);
 
-            var postProcessing = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.PostProcess);
-
-            if (postProcessing.Count() != data.First().Count())
-            {
-                throw new Exception("");
-            }
-
-            Table.Rows = data.Select(row => row.Zip(postProcessing, (value, process) => process.Compile().Invoke(value)));
+            Table.Rows = data.Select(row => row.Zip(postProcesses, (value, process) => value == null ? "" : process.Compile().Invoke(value)));
 
             return MetroFilledTableBuilder.FromTable(Table);
         }

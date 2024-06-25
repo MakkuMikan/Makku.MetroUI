@@ -8,10 +8,16 @@ namespace Makku.MetroUI.Tables
     public class DataColumn<T> : Column
     {
         [JsonIgnore]
-        public new Expression<Func<T, object>> Mapping { get; set; } = default;
+        public LambdaExpression Mapping { get; set; } = default;
 
         [JsonIgnore]
-        public new Expression<Func<object, string>> PostProcess { get; set; } = v => v == null ? "" : v.ToString();
+        public LambdaExpression PostProcess { get; set; } = (Expression<Func<object, string>>)(i => i == null ? "" : i.ToString());
+
+        [JsonIgnore]
+        public Expression<Func<T, string>> DirectMapping { get; set; } = default;
+
+        [JsonIgnore]
+        public Type PropertyType { get; set; }
 
         [JsonIgnore]
         public List<ColumnButton<T>> Buttons { get; set; } = new List<ColumnButton<T>>();

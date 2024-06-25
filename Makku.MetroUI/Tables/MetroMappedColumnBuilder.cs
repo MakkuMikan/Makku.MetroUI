@@ -97,7 +97,7 @@ namespace Makku.MetroUI.Tables
         public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name) => Save().WithSortableColumn(name);
         public MetroMappedColumnBuilder<TModel> WithSortableColumn(string name, string title) => Save().WithSortableColumn(name, title);
 
-        public MetroMappedColumnBuilder<TModel> WithMapping<TValue>(Expression<Func<TModel, TValue>> expression) where TValue : class
+        public MetroMappedColumnBuilder<TModel> WithMapping<TValue>(Expression<Func<TModel, TValue>> expression)
         {
             var mappingParameter = Expression.Parameter(typeof(TModel), "x");
             var mappingBody = Expression.Convert(Expression.Invoke(expression, mappingParameter), typeof(object));
@@ -105,14 +105,173 @@ namespace Makku.MetroUI.Tables
             return this;
         }
 
-        public MetroMappedColumnBuilder<TModel> WithMapping<TValue>(Expression<Func<TModel, TValue>> expression, Expression<Func<TValue, string>> postProcess)
+        public MetroMappedColumnBuilder<TModel> WithMapping(Expression<Func<TModel, string>> expression)
+        {
+            if (expression.Body is MethodCallExpression method)
+            {
+                if (method.Method.Name == "Format")
+                {
+                    var propExpression = Expression.NewArrayInit(
+                        typeof(object),
+                        method.Arguments.Skip(1)
+                    );
+
+                    Column.Mapping = Expression.Lambda(propExpression, expression.Parameters);
+
+                    Column.PropertyType = typeof(IEnumerable<object>);
+
+                    var ppParameter = Expression.Parameter(typeof(object[]), "i");
+                    var ppBody = Expression.Call(null, method.Method, method.Arguments[0], ppParameter);
+                    Column.PostProcess = Expression.Lambda(ppBody, ppParameter);
+                    return this;
+                }
+                else if (method.Object == null)
+                {
+                    var propExpression = Expression.NewArrayInit(
+                        typeof(object),
+                        method.Arguments.Select(x =>
+                        {
+                            if (x.NodeType == ExpressionType.MemberAccess && ((MemberExpression)x).Expression.Type == typeof(TModel))
+                            {
+                                return x;
+                            }
+                            else
+                            {
+                                return Expression.Constant("%%POST&PROCESS%%"); // to be replaced in post-process stage
+                            }
+                        })
+                    );
+
+                    Column.Mapping = Expression.Lambda(propExpression, expression.Parameters);
+
+                    Column.PropertyType = typeof(object[]);
+
+                    var ppParameter = Expression.Parameter(typeof(object[]), "i");
+
+                    // iterate through ppParameter in an expression tree, replacing "%%POST&PROCESS%%" with the actual post-process expression
+                    var visitor = new CustomExpressionVisitor();
+                    visitor.Visit(expression.Body);
+
+                    var ppBody = visitor.MethodCall.Arguments.Select((arg, i) =>
+                    {
+                        if (arg is ConstantExpression && ((ConstantExpression)arg).Value.ToString() == "%%POST&PROCESS%%")
+                        {
+                            return Expression.Invoke(method, ppParameter);
+                        }
+                        else
+                        {
+                            return arg;
+                        }
+                    });
+
+                    Column.PostProcess = Expression.Lambda(Expression.Call(method.Method, ppBody), ppParameter);
+                    return this;
+                }
+                else if (method.Object.Type != typeof(TModel)
+                    && !(method.Object is MemberExpression) || ((MemberExpression)method.Object).Expression.Type != typeof(TModel)
+                    && !(((MemberExpression)method.Object) is MemberExpression) || ((MemberExpression)((MemberExpression)method.Object)).Expression.Type != typeof(TModel))
+                {
+                    // separate out all the properties of the database model that are being used in the expression
+                    var propExpression = Expression.NewArrayInit(
+                        typeof(object),
+                        method.Arguments.Select(x =>
+                        {
+                            if (x.NodeType == ExpressionType.MemberAccess && ((MemberExpression)x).Expression.Type == typeof(TModel))
+                            {
+                                return x;
+                            }
+                            else
+                            {
+                                return Expression.Constant("%%POST&PROCESS%%"); // to be replaced in post-process stage
+                            }
+                        })
+                    );
+
+                    Column.Mapping = Expression.Lambda(propExpression, expression.Parameters);
+
+                    Column.PropertyType = typeof(object[]);
+
+                    // now we have to replace the "%%POST&PROCESS%%" with the actual post-process expression
+                    // we couldn't do this before because Entity Framework doesn't allow us to use unsupported methods in the expression tree
+
+                    // the parameter for the data retrieved from the .Mapping expression
+                    var ppParameter = Expression.Parameter(typeof(object[]), "i");
+
+                    // iterate through ppParameter, replacing "%%POST&PROCESS%%" with the actual post-process expression
+                    var ppParameters = method.Arguments.Select((arg, i) =>
+                    {
+                        if (arg is ConstantExpression && ((ConstantExpression)arg).Value.ToString() == "%%POST&PROCESS%%")
+                        {
+                            return ppParameter;
+                        }
+                        else
+                        {
+                            return arg;
+                        }
+                    });
+
+                    Column.PostProcess = Expression.Lambda(Expression.Call(method.Object, method.Method, ppParameters), ppParameter);
+                    return this;
+                }
+
+                var propertyAccessor = method.Object as MemberExpression;
+
+                var mappingParameter = Expression.Parameter(typeof(TModel), "x");
+                //var mappingBody = Expression.Convert(Expression.Invoke(propertyAccessor, mappingParameter), typeof(object));
+                //Column.Mapping = Expression.Lambda<Func<TModel, object>>(mappingBody, mappingParameter);
+
+                Column.Mapping = Expression.Lambda(propertyAccessor, expression.Parameters);
+
+                Column.PropertyType = propertyAccessor.Type;
+
+                var postProcessParameter = Expression.Parameter(propertyAccessor.Type, "x");
+                var postProcessBody = Expression.Call(postProcessParameter, method.Method, method.Arguments);
+                Column.PostProcess = Expression.Lambda(postProcessBody, postProcessParameter);
+            }
+            else if (expression.Body is MemberExpression)
+            {
+                Column.DirectMapping = expression;
+            }
+
+            return this;
+        }
+
+        public class CustomExpressionVisitor : ExpressionVisitor
+        {
+            public MemberExpression MemberAccess { get; private set; }
+            public MethodCallExpression MethodCall { get; private set; }
+
+            protected override Expression VisitMember(MemberExpression node)
+            {
+                MemberAccess = node;
+                return base.VisitMember(node);
+            }
+
+            protected override Expression VisitMethodCall(MethodCallExpression node)
+            {
+                MethodCall = node;
+                return base.VisitMethodCall(node);
+            }
+        }
+
+        public MetroMappedColumnBuilder<TModel> WithMapping<TValue>(Expression<Func<TModel, TValue>> expression, Expression<Func<TValue, string>> postProcess, string defaultValue = "")
         {
             var mappingParameter = Expression.Parameter(typeof(TModel), "x");
             var mappingBody = Expression.Convert(Expression.Invoke(expression, mappingParameter), typeof(object));
             Column.Mapping = Expression.Lambda<Func<TModel, object>>(mappingBody, mappingParameter);
 
             var ppParameter = Expression.Parameter(typeof(object), "x");
-            var ppBody = Expression.Invoke(postProcess, Expression.Convert(ppParameter, typeof(TValue)));
+            var ppBody = Expression.TryCatch(
+                Expression.Condition(
+                    Expression.Equal(ppParameter, Expression.Constant(null)),
+                    Expression.Constant(defaultValue),
+                    Expression.Invoke(postProcess, Expression.Convert(ppParameter, typeof(TValue)))
+                ),
+                Expression.Catch(
+                    typeof(NullReferenceException),
+                    Expression.Constant(defaultValue)
+                )
+            );
             Column.PostProcess = Expression.Lambda<Func<object, string>>(ppBody, ppParameter);
             return this;
         }
@@ -137,7 +296,7 @@ namespace Makku.MetroUI.Tables
             var surroundExpression = Expression.Call(
                 method: typeof(string).GetMethod("Concat", new[] { typeof(string), typeof(string), typeof(string) }),
                 Expression.Constant("<img class=\"table-image\" src=\""),
-                existingMapping.Body,
+                Expression.Convert(existingMapping.Body, typeof(string)),
                 Expression.Constant("\" />")
             );
 
@@ -151,14 +310,14 @@ namespace Makku.MetroUI.Tables
         public static MetroMappedColumnBuilder<TModel> WithMapping(MetroMappedTableBuilder<TModel> tableBuilder, DataColumn<TModel> column, Expression<Func<TModel, object>> expression)
             => new MetroMappedColumnBuilder<TModel>(tableBuilder, column).WithMapping(expression);
 
-        public static MetroMappedColumnBuilder<TModel> WithMapping<TValue>(MetroTable table, DataColumn<TModel> column, Expression<Func<TModel, TValue>> expression) where TValue : class
+        public static MetroMappedColumnBuilder<TModel> WithMapping<TValue>(MetroTable table, DataColumn<TModel> column, Expression<Func<TModel, TValue>> expression)
         {
             var tableBuilder = new MetroMappedTableBuilder<TModel>(table);
             var instance = new MetroMappedColumnBuilder<TModel>(tableBuilder, column);
             return instance.WithMapping(expression);
         }
 
-        public static MetroMappedColumnBuilder<TModel> WithMapping<TValue>(MetroTable table, Column column, Expression<Func<TModel, TValue>> expression) where TValue : class
+        public static MetroMappedColumnBuilder<TModel> WithMapping<TValue>(MetroTable table, Column column, Expression<Func<TModel, TValue>> expression)
         {
             var instance = new MetroMappedColumnBuilder<TModel>(new MetroMappedTableBuilder<TModel>(table), new DataColumn<TModel>(column));
             return instance.WithMapping(expression);

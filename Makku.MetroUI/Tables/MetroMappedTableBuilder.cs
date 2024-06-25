@@ -61,12 +61,12 @@ namespace Makku.MetroUI.Tables
         {
             var instance = new MetroMappedDataTableBuilder<TModel>(table);
 
-            var mappings = instance.Table.Columns.OfType<DataColumn<TModel>>().Select(c => c.Mapping).ToArray() ?? Enumerable.Empty<Expression<Func<TModel, object>>>();
-            IEnumerable<object> processFunc(TModel entity) => mappings.Select(m => m.Compile().Invoke(entity));
+            var mappings = instance.Table.Columns.OfType<DataColumn<TModel>>().Select(c => c.Mapping).ToArray() ?? Enumerable.Empty<LambdaExpression>();
+            IEnumerable<object> processFunc(TModel entity) => mappings.Select(m => m.Compile().DynamicInvoke(entity));
 
             var postProcesses = instance.Table.Columns.OfType<DataColumn<TModel>>().Select(c => c.PostProcess);
 
-            instance.Table.Rows = values.Select(processFunc).Select(row => row.Zip(postProcesses, (value, process) => process.Compile().Invoke(value)));
+            instance.Table.Rows = values.Select(processFunc).Select(row => row.Zip(postProcesses, (value, process) => value == null ? "" : process.Compile().DynamicInvoke(value).ToString()));
             return instance;
         }
 

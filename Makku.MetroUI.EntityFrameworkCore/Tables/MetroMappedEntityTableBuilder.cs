@@ -38,7 +38,7 @@ namespace Makku.MetroUI.Tables
         {
             IEnumerable<IEnumerable<object>> data;
 
-            var mappings = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.Mapping).ToArray() ?? Array.Empty<Expression<Func<TEntity, object>>>();
+            var mappings = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.DirectMapping ?? c.Mapping).ToArray() ?? [];
 
             var convert = CombineExpressions(mappings);
 
@@ -46,18 +46,18 @@ namespace Makku.MetroUI.Tables
 
             var postProcesses = Table.Columns.OfType<DataColumn<TEntity>>().Select(c => c.PostProcess);
 
-            Table.Rows = data.Select(row => row.Zip(postProcesses, (value, process) => process.Compile().Invoke(value)));
+            Table.Rows = data.Select(row => row.Zip(postProcesses, (value, process) => value == null ? "" : process.Compile().DynamicInvoke(value)?.ToString() ?? ""));
 
             return MetroFilledTableBuilder.FromTable(Table);
         }
 
-        public static Expression<Func<TEntity, object[]>> CombineExpressions(params Expression<Func<TEntity, object>>[] expressions)
+        public static Expression<Func<TEntity, object[]>> CombineExpressions(params LambdaExpression[] expressions)
         {
             var parameter = Expression.Parameter(typeof(TEntity), "x");
 
             var arrayInit = Expression.NewArrayInit(
                 typeof(object),
-                expressions.Select(e => ReplaceParameter(e.Body, e.Parameters[0], parameter))
+                expressions.Select(e => Expression.Convert(ReplaceParameter(e.Body, e.Parameters[0], parameter), typeof(object)))
             );
 
             return Expression.Lambda<Func<TEntity, object[]>>(arrayInit, parameter);
