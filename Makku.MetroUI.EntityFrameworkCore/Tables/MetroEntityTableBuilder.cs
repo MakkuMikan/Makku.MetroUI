@@ -26,7 +26,7 @@ namespace Makku.MetroUI.Tables
 
             data = await Query.ToListAsync();
 
-            Table.Rows = (ConcurrentBag<List<string>>)data;
+            Table.Rows = data;
 
             return MetroFilledTableBuilder.FromTable(Table);
         }

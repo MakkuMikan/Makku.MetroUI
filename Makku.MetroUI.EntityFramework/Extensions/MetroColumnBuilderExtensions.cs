@@ -7,8 +7,8 @@ namespace Makku.MetroUI.Extensions
 {
     public static class MetroColumnBuilderExtensions
     {
-        public static MetroEntityTableBuilder<T> WithEFQuery<T>(this MetroColumnBuilder columnBuilder, IQueryable<IEnumerable<string>> query) where T : class
-            => MetroEntityTableBuilder<T>.WithQuery(columnBuilder.WithCustom().Table, query);
+        public static MetroEntityTableBuilder WithEFQuery(this MetroColumnBuilder columnBuilder, IQueryable<IEnumerable<string>> query)
+            => MetroEntityTableBuilder.WithQuery(columnBuilder.WithCustom().Table, query);
 
         public static MetroMappedEntityTableBuilder<T> WithEFQuery<T>(this MetroMappedColumnBuilder<T> columnBuilder, IQueryable<T> query) where T : class
             => MetroMappedEntityTableBuilder<T>.WithQuery(columnBuilder.WithCustom().Table, query);

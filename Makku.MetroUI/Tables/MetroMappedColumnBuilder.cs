@@ -109,9 +109,9 @@ namespace Makku.MetroUI.Tables
         {
             var mappingParameter = Expression.Parameter(typeof(TModel), "x");
             var mappingBody = Expression.Convert(Expression.Invoke(expression, mappingParameter), typeof(object));
-            Column.Mapping = Expression.Lambda<Func<TModel, object>>(mappingBody, mappingParameter);
+            Column.Mapping = Expression.Lambda(mappingBody, mappingParameter);
 
-            var ppParameter = Expression.Parameter(typeof(object), "x");
+            var ppParameter = Expression.Parameter(typeof(TValue), "x");
             var ppBody = Expression.Invoke(postProcess, Expression.Convert(ppParameter, typeof(TValue)));
             Column.PostProcess = Expression.Lambda<Func<object, string>>(ppBody, ppParameter);
             return this;

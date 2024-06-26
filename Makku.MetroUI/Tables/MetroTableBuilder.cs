@@ -44,26 +44,6 @@ namespace Makku.MetroUI.Tables
             => MetroCustomTableBuilder.WithTable(Table);
     }
 
-    public class MetroTableBuilder<TModel>
-    {
-        public static MetroMappedTableBuilder<TModel> NewTable() => new MetroMappedTableBuilder<TModel>();
-
-        public static MetroMappedColumnBuilder<TModel> WithColumn(string name) => NewTable().WithColumn(name);
-        public static MetroMappedColumnBuilder<TModel> WithColumn(string name, string title) => NewTable().WithColumn(name, title);
-        public static MetroMappedColumnBuilder<TModel> WithSortableColumn(string name) => NewTable().WithSortableColumn(name);
-        public static MetroMappedColumnBuilder<TModel> WithSortableColumn(string name, string title) => NewTable().WithSortableColumn(name, title);
-        public static MetroMappedColumnBuilder<TModel> WithHiddenColumn(string name) => NewTable().WithHiddenColumn(name);
-        public static MetroMappedColumnBuilder<TModel> WithHiddenColumn(string name, string title) => NewTable().WithHiddenColumn(name, title);
-
-        public static MetroMappedTableBuilder<TModel> WithColumn(DataColumn<TModel> column) => NewTable().WithColumn(column);
-
-        public static MetroMappedColumnBuilder<TModel> WithColumn(string name, string title = null, string size = null, bool sortable = false, MetroTable.SortDirection? sortDirection = null, MetroTable.Format? format = null)
-            => NewTable().WithColumn(name, title, size, sortable, sortDirection, format);
-
-        public static MetroMappedColumnBuilder<TModel> WithSortableColumn(string name, string title = null, string size = null, MetroTable.SortDirection? sortDirection = null, MetroTable.Format? format = null)
-            => WithColumn(name, title, size, true, sortDirection, format);
-    }
-
     public class MetroCustomTableBuilder
     {
         public readonly MetroTable Table;
@@ -89,39 +69,12 @@ namespace Makku.MetroUI.Tables
         public static MetroDataTableBuilder WithData(MetroTable table, IEnumerable<IEnumerable<string>> values)
         {
             var instance = new MetroDataTableBuilder(table);
-            instance.Table.Rows = (ConcurrentBag<List<string>>)values;
+            instance.Table.Rows = values;
             return instance;
         }
 
         public MetroTable Compile() => Table;
     }
-
-    //public class MetroQueryTableBuilder<T>
-    //{
-    //    private readonly IMetroTable Table;
-    //    private IQueryable<IEnumerable<T>> _Query { get; set; }
-
-    //    public MetroQueryTableBuilder(IMetroTable table)
-    //    {
-    //        Table = table;
-    //    }
-
-    //    public static MetroQueryTableBuilder<T> WithQuery(IMetroTable table, IQueryable<IEnumerable<T>> query)
-    //    {
-    //        var instance = new MetroQueryTableBuilder<T>(table);
-    //        instance._Query = query;
-    //        return instance;
-    //    }
-
-    //    public MetroFilledTableBuilder<T> Query()
-    //    {
-    //        Table.Rows = (ConcurrentBag<List<T>>)_Query.AsEnumerable();
-
-    //        return MetroFilledTableBuilder<T>.FromTable(Table);
-    //    }
-
-    //    public IMetroTable QueryAndCompile() => Query().Compile();
-    //}
 
     public class MetroFilledTableBuilder
     {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Makku.MetroUI.Tables
 {
-    public class MetroEntityTableBuilder<TEntity>
+    public class MetroEntityTableBuilder
     {
         private MetroTable Table { get; }
         private IQueryable<IEnumerable<string>> Query { get; set; }
@@ -16,9 +16,9 @@ namespace Makku.MetroUI.Tables
             Table = table;
         }
 
-        public static MetroEntityTableBuilder<TEntity> WithQuery(MetroTable table, IQueryable<IEnumerable<string>> query)
+        public static MetroEntityTableBuilder WithQuery(MetroTable table, IQueryable<IEnumerable<string>> query)
         {
-            var instance = new MetroEntityTableBuilder<TEntity>(table);
+            var instance = new MetroEntityTableBuilder(table);
             instance.Query = query;
             return instance;
         }
@@ -29,7 +29,7 @@ namespace Makku.MetroUI.Tables
 
             data = await Query.ToListAsync();
 
-            Table.Rows = (ConcurrentBag<List<string>>)data;
+            Table.Rows = data;
 
             return MetroFilledTableBuilder.FromTable(Table);
         }

@@ -60,7 +60,7 @@ namespace Makku.MetroUI.Tables
                 throw new Exception("");
             }
 
-            Table.Rows = data.Select(row => row.Zip(postProcessing, (value, process) => process.Compile().Invoke(value)));
+            Table.Rows = data.Select(row => row.Zip(postProcessing, (value, process) => (string)process.Compile().DynamicInvoke(value)));
 
             return MetroFilledTableBuilder.FromTable(Table);
         }

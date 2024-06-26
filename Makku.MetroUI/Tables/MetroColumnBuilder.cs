@@ -39,6 +39,8 @@ namespace Makku.MetroUI.Tables
             TableBuilder = tableBuilder;
         }
 
+        // Property Setters
+
         public MetroColumnBuilder WithName(string name)
         {
             Column.Name = name;
@@ -51,7 +53,23 @@ namespace Makku.MetroUI.Tables
             return this;
         }
 
+        public MetroColumnBuilder WithSize(int size)
+        {
+            Column.Size = size;
+            return this;
+        }
+
+        public MetroColumnBuilder WithSize(string size)
+        {
+            Column.Size = size;
+            return this;
+        }
+
+        // Save
+
         public MetroTableBuilder Save() => TableBuilder.WithColumn(Column);
+
+        // More Columns
 
         public MetroColumnBuilder WithColumn(string name) => Save().WithColumn(name);
         public MetroColumnBuilder WithColumn(string name, string title) => Save().WithColumn(name, title);
@@ -59,6 +77,8 @@ namespace Makku.MetroUI.Tables
         public MetroColumnBuilder WithSortableColumn(string name, string title) => Save().WithSortableColumn(name, title);
         public MetroColumnBuilder WithHiddenColumn(string name) => Save().WithHiddenColumn(name);
         public MetroColumnBuilder WithHiddenColumn(string name, string title) => Save().WithHiddenColumn(name, title);
+
+        // Conversions into other builders
 
         public MetroMappedColumnBuilder<T> WithMapping<T>(Expression<Func<T, object>> expression)
             => MetroMappedColumnBuilder<T>.WithMapping(TableBuilder.Table, Column, expression);
