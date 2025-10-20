@@ -264,7 +264,7 @@ namespace Makku.MetroUI.Services
                 return htmlAttributes;
             }
 
-            var newValue = string.Join(",", existingValues.Append(dataRole));
+            var newValue = string.Join(",", existingValues.Concat(new[] {dataRole}));
 
             htmlAttributes["data-role"] = newValue;
             return htmlAttributes;
